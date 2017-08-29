@@ -30,12 +30,12 @@ setGeneric("rd.pos", function(object, filepath) standardGeneric("rd.pos"))
 setMethod("rd.pos", signature("PositionsData", "character"), function(object, filepath){
     data <- read.data(filepath)
     object@.headline <- data[1]
-    object@.data <- data.frame(do.call(rbind, strsplit(data[4:(length(data)-2)], ',', fixed=TRUE)))
-#   colnames(object@.data) <- unlist(data[3])
+    object@.data <- data.frame(do.call(rbind, strsplit(data[4:(length(data)-2)], ',', fixed=TRUE)),stringsAsFactors=FALSE)
     colnames(object@.data) <- c('symbol','description','quantity','price',
         'price.change.dol','price.change.pct','market.value','day.change.dol',
         'day.change.pct','cost.basis','gain.loss.dol','gain.loss.pct','reinvest.dividends',
         'capital.gains','pct.of.account','security.type')
+    object@.data$quantity <- as.double(object@.data$quantity)
     object@.data$price <- as.double(sub('\\$','',object@.data$price))
     object@.data$price.change.dol <- as.double(sub('\\$','',object@.data$price.change.dol))
     object@.data$price.change.pct <- as.double(sub('\\%','',object@.data$price.change.pct))
@@ -48,30 +48,15 @@ setMethod("rd.pos", signature("PositionsData", "character"), function(object, fi
     object@.data$pct.of.account <- as.double(sub('\\%','',object@.data$pct.of.account))
     return(object)
 })
-
-setClass(
-    "NormalizedData", 
-    representation( 
-        .data = "data.frame",
-        .data.file = "character"
-    ),
-    contains = "Data"
-)
-setGeneric("normalize.data", function(object, file) standardGeneric("normalize.data"))
-setMethod("normalize.data", signature("NormalizedData", "character"), function(object, file){
-    df <- read.csv(file)
-    df <- df[df$Symbol != 'Total',]
-    df$Cost.Basis <- as.double(sub('\\$','',df$Cost.Basis))
-    norm.symbol <- df$Symbol
-    norm.quantity <- df$Quantity/sum(df$Quantity)*100
-    norm.cost.basis <- round(round(df$Cost.Basis/df$Quantity,2)*norm.quantity,2)
+setGeneric("normalize.data", function(object) standardGeneric("normalize.data"))
+setMethod("normalize.data", signature("PositionsData"), function(object){
+    df <- object@.data
+    norm.symbol <- df$symbol
+    norm.quantity <- df$quantity/sum(df$quantity)*100
+    norm.cost.basis <- round(round(df$cost.basis/df$quantity,2)*norm.quantity,2)
     normalized <- data.frame(norm.symbol, norm.quantity, norm.cost.basis)
-    object@.data <- normalized
-    return(object)
+    return(normalized)
 })
-#ndata <- new("NormalizedData", .data.file = 'sanatized.csv')
-#ndata <- normalize.data(ndata, 'sanatized.csv')
-#ndata@.data
 
 setClass(
     "TransactionData",
@@ -97,4 +82,5 @@ setMethod("add.entries", signature("TransactionData", "character"), function(obj
 
 pos <- new("PositionsData")
 pos <- rd.pos(pos,'Individual-Positions-2017-08-29-115357.CSV')
-pos@.data
+normalize.data(pos)
+sum(normalize.data(pos)$norm.quantity)
