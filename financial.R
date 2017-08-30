@@ -48,6 +48,18 @@ setMethod("initialize","PositionsData",
         return(.Object)
     }
 )
+setMethod("show","PositionsData",
+    function(object){
+        cat("PositionsData: "); print(object@.headline)
+        print(object@.data)
+    }
+)
+setMethod("print","PositionsData",
+    function(x,...){
+        cat("PositionsData: "); print(x@.headline)
+        print(x@.data)
+    }
+)
 setGeneric("normalize", function(object) standardGeneric("normalize"))
 setMethod("normalize","PositionsData",
     function(object){
@@ -63,7 +75,6 @@ setMethod("normalize","PositionsData",
 setClass(
     "TransactionData",
     representation(
-        .headline = "character",
         .data = "data.frame"
     ),
     contains = "Data"
@@ -76,7 +87,14 @@ setMethod("initialize","TransactionData",
 )
 setMethod("show", "TransactionData",
     function(object){
+        cat("TransactionDatabase\n")
         print(object@.data)
+    }
+)
+setMethod("print", "TransactionData",
+    function(x,...){
+        cat("TransactionDatabase\n")
+        print(x@.data)
     }
 )
 setGeneric("backup.trans", function(object, filepath) standardGeneric("backup.trans"))
@@ -90,7 +108,6 @@ setGeneric("read.trans", function(object, filepath) standareadGeneric("read.tran
 setMethod("read.trans","TransactionData",
     function(object, filepath){
         data <- read.data(filepath)
-        object@.headline <- data[1]
         object@.data <- data.frame(do.call(rbind, strsplit(data[3:(length(data)-2)], ',', fixed=TRUE)), stringsAsFactors=FALSE)
         colnames(object@.data) <- c('date','action','symbol','description','quantity','price','fees.comm','amount')
         object@.data$date <- as.Date(sub('^(([0-9][0-9]/){2}[0-9]{4}) .*$','\\1', object@.data$date), "%m/%d/%Y")
