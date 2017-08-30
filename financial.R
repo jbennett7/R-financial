@@ -67,12 +67,13 @@ setClass(
     ),
     contains = "Data"
 )
+setMethod("initialize","TransactionData",
+    function(object, filepath){
+        object@.data <- read.csv(filepath)
+        return(object)
+    }
+)
 setMethod("show", "TransactionData", function(object){print(object@.data)})
-setGeneric("initialize.trans", function(object, filepath) standardGeneric("initialize.trans"))
-setMethod("initialize.trans", signature("TransactionData", "character"), function(object, filepath){
-    object@.data <- read.csv(filepath)
-    return(object)
-})
 setGeneric("backup.trans", function(object, filepath) standardGeneric("backup.trans"))
 setMethod("backup.trans", signature("TransactionData", "character"), function(object, filepath){
     write.csv(object@.data, filepath, row.names=FALSE)
