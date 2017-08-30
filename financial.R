@@ -18,8 +18,7 @@ read.data <- function(filepath){
 
 setClass("Data")
 
-setClass(
-    "PositionsData",
+setClass("PositionsData",
     representation(
         .headline = "character",
         .data = "data.frame"
@@ -49,15 +48,17 @@ setMethod("initialize","PositionsData",
         return(.Object)
     }
 )
-setGeneric("normalize", function(object) standardGeneric("normalize.data"))
-setMethod("normalize", signature("PositionsData"), function(object){
-    df <- object@.data
-    norm.symbol <- df$symbol
-    norm.quantity <- df$quantity/sum(df$quantity)*100
-    norm.cost.basis <- round(round(df$cost.basis/df$quantity,2)*norm.quantity,2)
-    normalized <- data.frame(norm.symbol, norm.quantity, norm.cost.basis)
-    return(normalized)
-})
+setGeneric("normalize", function(object) standardGeneric("normalize"))
+setMethod("normalize","PositionsData",
+    function(object){
+        df <- object@.data
+        norm.symbol <- df$symbol
+        norm.quantity <- df$quantity/sum(df$quantity)*100
+        norm.cost.basis <- round(round(df$cost.basis/df$quantity,2)*norm.quantity,2)
+        normalized <- data.frame(norm.symbol, norm.quantity, norm.cost.basis)
+        return(normalized)
+    }
+)
 
 setClass(
     "TransactionData",
@@ -68,28 +69,36 @@ setClass(
     contains = "Data"
 )
 setMethod("initialize","TransactionData",
+    function(.Object, filepath){
+        .Object@.data <- read.csv(filepath)
+        return(.Object)
+    }
+)
+setMethod("show", "TransactionData",
+    function(object){
+        print(object@.data)
+    }
+)
+setGeneric("backup.trans", function(object, filepath) standardGeneric("backup.trans"))
+setMethod("backup.trans","TransactionData",
     function(object, filepath){
-        object@.data <- read.csv(filepath)
+        write.csv(object@.data, filepath, row.names=FALSE)
         return(object)
     }
 )
-setMethod("show", "TransactionData", function(object){print(object@.data)})
-setGeneric("backup.trans", function(object, filepath) standardGeneric("backup.trans"))
-setMethod("backup.trans", signature("TransactionData", "character"), function(object, filepath){
-    write.csv(object@.data, filepath, row.names=FALSE)
-    return(object)
-})
 setGeneric("read.trans", function(object, filepath) standareadGeneric("read.trans"))
-setMethod("read.trans", signature("TransactionData", "character"), function(object, filepath){
-    data <- read.data(filepath)
-    object@.headline <- data[1]
-    object@.data <- data.frame(do.call(rbind, strsplit(data[3:(length(data)-2)], ',', fixed=TRUE)), stringsAsFactors=FALSE)
-    colnames(object@.data) <- c('date','action','symbol','description','quantity','price','fees.comm','amount')
-    object@.data$date <- as.Date(sub('^(([0-9][0-9]/){2}[0-9]{4}) .*$','\\1', object@.data$date), "%m/%d/%Y")
-    object@.data$quantity <- as.double(object@.data$quantity)
-    object@.data$price <- as.double(sub('\\$','',object@.data$price))
-    object@.data$fees.comm <- as.double(sub('\\$','',object@.data$fees.comm))
-    object@.data$amount <- as.double(sub('\\$','',object@.data$amount))
-    object@.data <- object@.data[ !duplicated(object@.data),]
-    return(object)
-})
+setMethod("read.trans","TransactionData",
+    function(object, filepath){
+        data <- read.data(filepath)
+        object@.headline <- data[1]
+        object@.data <- data.frame(do.call(rbind, strsplit(data[3:(length(data)-2)], ',', fixed=TRUE)), stringsAsFactors=FALSE)
+        colnames(object@.data) <- c('date','action','symbol','description','quantity','price','fees.comm','amount')
+        object@.data$date <- as.Date(sub('^(([0-9][0-9]/){2}[0-9]{4}) .*$','\\1', object@.data$date), "%m/%d/%Y")
+        object@.data$quantity <- as.double(object@.data$quantity)
+        object@.data$price <- as.double(sub('\\$','',object@.data$price))
+        object@.data$fees.comm <- as.double(sub('\\$','',object@.data$fees.comm))
+        object@.data$amount <- as.double(sub('\\$','',object@.data$amount))
+        object@.data <- object@.data[ !duplicated(object@.data),]
+        return(object)
+    }
+)
