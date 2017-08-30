@@ -49,8 +49,8 @@ setMethod("initialize","PositionsData",
         return(.Object)
     }
 )
-setGeneric("normalize.data", function(object) standardGeneric("normalize.data"))
-setMethod("normalize.data", signature("PositionsData"), function(object){
+setGeneric("normalize", function(object) standardGeneric("normalize.data"))
+setMethod("normalize", signature("PositionsData"), function(object){
     df <- object@.data
     norm.symbol <- df$symbol
     norm.quantity <- df$quantity/sum(df$quantity)*100
