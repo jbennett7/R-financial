@@ -17,6 +17,57 @@ read.data <- function(filepath){
 }
 
 setClass("Data")
+setClass("StockData",
+    contains = "Data"
+)
+setClass("ExchangeStockData",
+    representation(
+        .symbol = "character",
+        .exchange = "character",
+        .name = "character",
+        .price = "numeric",
+        .outstanding = "numeric",
+        .dividend = "numeric",
+        .update = "Date"
+    ),
+    contains = "StockData"
+)
+setMethod("initialize","ExchangeStockData",
+    function(.Object, symbol, exchange, name, price, outstanding, dividend, update){
+        .Object@.symbol <- symbol
+        .Object@.exchange <- exchange
+        .Object@.name <- name
+        .Object@.price <- price
+        .Object@.outstanding <- outstanding
+        .Object@.dividend <- dividend
+        .Object@.update <- as.Date(update, "%m/%d/%Y")
+        return(.Object)
+    }
+)
+setMethod("show","StockData",
+    function(object){
+        cat("----------------------------\n")
+        cat(x@.exchange,":",x@.symbol,"\n", sep="")
+        cat(x@.name, "\n", sep="")
+        cat("Price: $", x@.price, "\n", sep="")
+        cat("Shares Outstanding: ", x@.outstanding, "\n", sep="")
+        cat("Dividend per quarter: ", x@.dividend, "\n", sep="")
+        cat("Last update: ", x@.update, "\n", sep="")
+        cat("----------------------------\n")
+    }
+)
+setMethod("print","StockData",
+    function(x,...){
+        cat("----------------------------\n")
+        cat(x@.exchange,":",x@.symbol,"\n", sep="")
+        cat(x@.name, "\n", sep="")
+        cat("Price: $", x@.price, "\n", sep="")
+        cat("Shares Outstanding: ", x@.outstanding, "\n", sep="")
+        cat("Dividend per quarter: ", x@.dividend, "\n", sep="")
+        cat("Last update: ", x@.update, "\n", sep="")
+        cat("----------------------------\n")
+    }
+)
 
 setClass("PositionsData",
     representation(
