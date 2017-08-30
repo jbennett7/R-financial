@@ -37,3 +37,4 @@ vignettes/*.pdf
 *.csv
 *.txt
 *.swp
+*.R-

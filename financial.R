@@ -26,11 +26,11 @@ setClass(
     ),
     contains = "Data"
 )
-setGeneric("rd.pos", function(object, filepath) standardGeneric("rd.pos"))
-setMethod("rd.pos", signature("PositionsData", "character"), function(object, filepath){
+setGeneric("read.pos", function(object, filepath) standareadGeneric("read.pos"))
+setMethod("read.pos", signature("PositionsData", "character"), function(object, filepath){
     data <- read.data(filepath)
     object@.headline <- data[1]
-    object@.data <- data.frame(do.call(rbind, strsplit(data[4:(length(data)-2)], ',', fixed=TRUE)),stringsAsFactors=FALSE)
+    object@.data <- data.frame(do.call(rbind, strsplit(data[4:(length(data)-2)], ',', fixed=TRUE)), stringsAsFactors=FALSE)
     colnames(object@.data) <- c('symbol','description','quantity','price',
         'price.change.dol','price.change.pct','market.value','day.change.dol',
         'day.change.pct','cost.basis','gain.loss.dol','gain.loss.pct','reinvest.dividends',
@@ -61,26 +61,32 @@ setMethod("normalize.data", signature("PositionsData"), function(object){
 setClass(
     "TransactionData",
     representation(
-        .table = "data.frame"
+        .headline = "character",
+        .data = "data.frame"
     ),
     contains = "Data"
 )
-setGeneric("add.entries", function(object, file) standardGeneric("add.entries"))
-setMethod("add.entries", signature("TransactionData", "character"), function(object, file){
-    df <- read.csv(file)
-    df[,c('Date')] <- gsub('^(([0-9][0-9]/){2}[0-9]{4}) .*$','\\1', df[,c('Date')])
-    df <- df[, !(names(df) %in% c('X'))]
-    trasaction.database <- object@.table
-    transaction.database <- rbind(transaction.database, df)
-    transaction.database <- transaction.database[!duplicated(transaction.database),]
-    object@.table <- transaction.database
+setGeneric("initialize.trans", function(object, filepath) standardGeneric("initialize.trans"))
+setMethod("initialize.trans", signature("TransactionData", "character"), function(object, filepath){
+    object@.data <- read.csv(filepath)
     return(object)
 })
-#table <- new("TransactionData")
-#table@.table <- read.csv('transactiondatabase.csv')
-#table@.table
-
-pos <- new("PositionsData")
-pos <- rd.pos(pos,'Individual-Positions-2017-08-29-115357.CSV')
-normalize.data(pos)
-sum(normalize.data(pos)$norm.quantity)
+setGeneric("backup.trans", function(object, filepath) standardGeneric("backup.trans"))
+setMethod("backup.trans", signature("TransactionData", "character"), function(object, filepath){
+    write.csv(object@.data, filepath, row.names=FALSE)
+    return(object)
+})
+setGeneric("read.trans", function(object, filepath) standareadGeneric("read.trans"))
+setMethod("read.trans", signature("TransactionData", "character"), function(object, filepath){
+    data <- read.data(filepath)
+    object@.headline <- data[1]
+    object@.data <- data.frame(do.call(rbind, strsplit(data[3:(length(data)-2)], ',', fixed=TRUE)), stringsAsFactors=FALSE)
+    colnames(object@.data) <- c('date','action','symbol','description','quantity','price','fees.comm','amount')
+    object@.data$date <- as.Date(sub('^(([0-9][0-9]/){2}[0-9]{4}) .*$','\\1', object@.data$date), "%m/%d/%Y")
+    object@.data$quantity <- as.double(object@.data$quantity)
+    object@.data$price <- as.double(sub('\\$','',object@.data$price))
+    object@.data$fees.comm <- as.double(sub('\\$','',object@.data$fees.comm))
+    object@.data$amount <- as.double(sub('\\$','',object@.data$amount))
+    object@.data <- object@.data[ !duplicated(object@.data),]
+    return(object)
+})
