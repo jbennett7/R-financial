@@ -26,28 +26,29 @@ setClass(
     ),
     contains = "Data"
 )
-setGeneric("read.pos", function(object, filepath) standareadGeneric("read.pos"))
-setMethod("read.pos", signature("PositionsData", "character"), function(object, filepath){
-    data <- read.data(filepath)
-    object@.headline <- data[1]
-    object@.data <- data.frame(do.call(rbind, strsplit(data[4:(length(data)-2)], ',', fixed=TRUE)), stringsAsFactors=FALSE)
-    colnames(object@.data) <- c('symbol','description','quantity','price',
-        'price.change.dol','price.change.pct','market.value','day.change.dol',
-        'day.change.pct','cost.basis','gain.loss.dol','gain.loss.pct','reinvest.dividends',
-        'capital.gains','pct.of.account','security.type')
-    object@.data$quantity <- as.double(object@.data$quantity)
-    object@.data$price <- as.double(sub('\\$','',object@.data$price))
-    object@.data$price.change.dol <- as.double(sub('\\$','',object@.data$price.change.dol))
-    object@.data$price.change.pct <- as.double(sub('\\%','',object@.data$price.change.pct))
-    object@.data$market.value <- as.double(sub('\\$','',object@.data$market.value))
-    object@.data$day.change.dol <- as.double(sub('\\$','',object@.data$day.change.dol))
-    object@.data$day.change.pct <- as.double(sub('\\%','',object@.data$day.change.pct))
-    object@.data$cost.basis <- as.double(sub('\\$','',object@.data$cost.basis))
-    object@.data$gain.loss.dol <- as.double(sub('\\$','',object@.data$gain.loss.dol))
-    object@.data$gain.loss.pct <- as.double(sub('\\%','',object@.data$gain.loss.pct))
-    object@.data$pct.of.account <- as.double(sub('\\%','',object@.data$pct.of.account))
-    return(object)
-})
+setMethod("initialize","PositionsData",
+    function(.Object, filepath){
+        data <- read.data(filepath)
+        .Object@.headline <- data[1]
+        .Object@.data <- data.frame(do.call(rbind, strsplit(data[4:(length(data)-2)], ',', fixed=TRUE)), stringsAsFactors=FALSE)
+        colnames(.Object@.data) <- c('symbol','description','quantity','price',
+            'price.change.dol','price.change.pct','market.value','day.change.dol',
+            'day.change.pct','cost.basis','gain.loss.dol','gain.loss.pct','reinvest.dividends',
+            'capital.gains','pct.of.account','security.type')
+        .Object@.data$quantity <- as.double(.Object@.data$quantity)
+        .Object@.data$price <- as.double(sub('\\$','',.Object@.data$price))
+        .Object@.data$price.change.dol <- as.double(sub('\\$','',.Object@.data$price.change.dol))
+        .Object@.data$price.change.pct <- as.double(sub('\\%','',.Object@.data$price.change.pct))
+        .Object@.data$market.value <- as.double(sub('\\$','',.Object@.data$market.value))
+        .Object@.data$day.change.dol <- as.double(sub('\\$','',.Object@.data$day.change.dol))
+        .Object@.data$day.change.pct <- as.double(sub('\\%','',.Object@.data$day.change.pct))
+        .Object@.data$cost.basis <- as.double(sub('\\$','',.Object@.data$cost.basis))
+        .Object@.data$gain.loss.dol <- as.double(sub('\\$','',.Object@.data$gain.loss.dol))
+        .Object@.data$gain.loss.pct <- as.double(sub('\\%','',.Object@.data$gain.loss.pct))
+        .Object@.data$pct.of.account <- as.double(sub('\\%','',.Object@.data$pct.of.account))
+        return(.Object)
+    }
+)
 setGeneric("normalize.data", function(object) standardGeneric("normalize.data"))
 setMethod("normalize.data", signature("PositionsData"), function(object){
     df <- object@.data
@@ -66,6 +67,7 @@ setClass(
     ),
     contains = "Data"
 )
+setMethod("show", "TransactionData", function(object){print(object@.data)})
 setGeneric("initialize.trans", function(object, filepath) standardGeneric("initialize.trans"))
 setMethod("initialize.trans", signature("TransactionData", "character"), function(object, filepath){
     object@.data <- read.csv(filepath)
