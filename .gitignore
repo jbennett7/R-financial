@@ -38,3 +38,6 @@ vignettes/*.pdf
 *.txt
 *.swp
 *.R-
+sedscr.sed
+!positions_test_data.csv
+!transaction_test_data.csv

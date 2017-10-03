@@ -18,9 +18,6 @@ read.data <- function(filepath){
 
 setClass("Data")
 setClass("StockData",
-    contains = "Data"
-)
-setClass("ExchangeStockData",
     representation(
         .symbol = "character",
         .exchange = "character",
@@ -30,9 +27,9 @@ setClass("ExchangeStockData",
         .dividend = "numeric",
         .update = "Date"
     ),
-    contains = "StockData"
+    contains = "Data"
 )
-setMethod("initialize","ExchangeStockData",
+setMethod("initialize","StockData",
     function(.Object, symbol, exchange, name, price, outstanding, dividend, update){
         .Object@.symbol <- symbol
         .Object@.exchange <- exchange
@@ -47,12 +44,12 @@ setMethod("initialize","ExchangeStockData",
 setMethod("show","StockData",
     function(object){
         cat("----------------------------\n")
-        cat(x@.exchange,":",x@.symbol,"\n", sep="")
-        cat(x@.name, "\n", sep="")
-        cat("Price: $", x@.price, "\n", sep="")
-        cat("Shares Outstanding: ", x@.outstanding, "\n", sep="")
-        cat("Dividend per quarter: ", x@.dividend, "\n", sep="")
-        cat("Last update: ", x@.update, "\n", sep="")
+        cat(object@.exchange,":",object@.symbol,"\n", sep="")
+        cat(object@.name, "\n", sep="")
+        cat("Price: $", object@.price, "\n", sep="")
+        cat("Shares Outstanding: ", object@.outstanding, "\n", sep="")
+        cat("Dividend per quarter: ", object@.dividend, "\n", sep="")
+        cat("Last update: ", object@.update, "\n", sep="")
         cat("----------------------------\n")
     }
 )
@@ -69,14 +66,15 @@ setMethod("print","StockData",
     }
 )
 
-setClass("PositionsData",
+setClass("Table")
+setClass("PositionsTable",
     representation(
         .headline = "character",
         .data = "data.frame"
     ),
-    contains = "Data"
+    contains = "Table"
 )
-setMethod("initialize","PositionsData",
+setMethod("initialize","PositionsTable",
     function(.Object, filepath){
         data <- read.data(filepath)
         .Object@.headline <- data[1]
@@ -99,20 +97,20 @@ setMethod("initialize","PositionsData",
         return(.Object)
     }
 )
-setMethod("show","PositionsData",
+setMethod("show","PositionsTable",
     function(object){
-        cat("PositionsData: "); print(object@.headline)
+        cat("PositionsTable: "); print(object@.headline)
         print(object@.data)
     }
 )
-setMethod("print","PositionsData",
+setMethod("print","PositionsTable",
     function(x,...){
-        cat("PositionsData: "); print(x@.headline)
+        cat("PositionsTable: "); print(x@.headline)
         print(x@.data)
     }
 )
 setGeneric("normalize", function(object) standardGeneric("normalize"))
-setMethod("normalize","PositionsData",
+setMethod("normalize","PositionsTable",
     function(object){
         df <- object@.data
         norm.symbol <- df$symbol
@@ -124,39 +122,41 @@ setMethod("normalize","PositionsData",
 )
 
 setClass(
-    "TransactionData",
+    "TransactionTable",
     representation(
         .data = "data.frame"
     ),
     contains = "Data"
 )
-setMethod("initialize","TransactionData",
-    function(.Object, filepath){
-        .Object@.data <- read.csv(filepath)
+setMethod("initialize","TransactionTable",
+    function(.Object, filepath=NULL){
+        if( ! is.null(filepath) & file.exists(filepath) ){
+            .Object@.data <- read.csv(filepath)
+        }
         return(.Object)
     }
 )
-setMethod("show", "TransactionData",
+setMethod("show", "TransactionTable",
     function(object){
-        cat("TransactionDatabase\n")
+        cat("TransactionTable\n")
         print(object@.data)
     }
 )
-setMethod("print", "TransactionData",
+setMethod("print", "TransactionTable",
     function(x,...){
-        cat("TransactionDatabase\n")
+        cat("TransactionTable\n")
         print(x@.data)
     }
 )
-setGeneric("backup.trans", function(object, filepath) standardGeneric("backup.trans"))
-setMethod("backup.trans","TransactionData",
+setGeneric("backup.transactions", function(object, filepath) standardGeneric("backup.transactions"))
+setMethod("backup.transactions","TransactionTable",
     function(object, filepath){
         write.csv(object@.data, filepath, row.names=FALSE)
         return(object)
     }
 )
-setGeneric("read.trans", function(object, filepath) standareadGeneric("read.trans"))
-setMethod("read.trans","TransactionData",
+setGeneric("read.transactions", function(object, filepath) standardGeneric("read.transactions"))
+setMethod("read.transactions","TransactionTable",
     function(object, filepath){
         data <- read.data(filepath)
         object@.data <- data.frame(do.call(rbind, strsplit(data[3:(length(data)-2)], ',', fixed=TRUE)), stringsAsFactors=FALSE)
