@@ -1,15 +1,19 @@
 source('financial.R')
+library(quantmod)
 
-pos <- new("PositionsTable", "positions_data.csv")
-normalize(pos)
-show(pos)
-print(pos)
+pos <- new("PositionsTable", "input.csv")
+#normalize(pos)
+#show(pos)
+#print(pos)
 
-table <- new("TransactionTable", "transactiondatabase.csv")
-table <- read.transactions(table, 'transaction_data.csv')
-table <- backup.transactions(table, 'transactiondatabase.csv')
-show(table)
-print(table)
+#table <- new("TransactionTable", "transactiondatabase.csv")
+#table <- read.transactions(table, 'transaction_data.csv')
+#table <- backup.transactions(table, 'transactiondatabase.csv')
+#show(table)
+#print(table)
 
-stock <- new("StockData", "SSW", "NYSE", "Seaside Windows", 22.34, 234332, .12, "12/1/2016")
-print(stock)
+pos@.data[,c("price")] <- getQuote(pos@.data[,c("symbol")])$Last
+pos@.data[,c("value")] <- pos@.data[,c("price")] * pos@.data[,c("quantity")]
+pos@.data[,c("gain-loss.pct")] <- (pos@.data[,c("value")] - pos@.data[,c("cost.basis")])/
+    pos@.data[,c("cost.basis")] * 100
+pos@.data[,c("symbol","quantity","price","value","cost.basis","gain-loss.pct")]
