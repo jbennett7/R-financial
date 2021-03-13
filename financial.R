@@ -1,7 +1,5 @@
 library(stringr)
 
-# From Schwab accounts, CSV files contain additional data that makes it difficult to convert directly to a data frame.
-
 # Read in the initial file as a character vector.
 read.data <- function(filepath){
     conn <- file(filepath, 'r')
