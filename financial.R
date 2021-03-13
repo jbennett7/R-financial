@@ -77,9 +77,16 @@ setClass("PositionsTable",
 setMethod("initialize","PositionsTable",
     function(.Object, filepath){
         data <- read.data(filepath)
+        csv_start <- 0
+        for(i in 1:length(data)){
+            if(lengths(regmatches(data[i],gregexpr(',',data[i]))) > 5){
+                csv_start <- i
+                break
+            }
+        }
         .Object@.headline <- data[1]
         .Object@.data <- data.frame(
-            do.call(rbind, strsplit(data[6:(length(data)-2)], ',', fixed=TRUE)),
+            do.call(rbind, strsplit(data[csv_start:(length(data)-2)], ',', fixed=TRUE)),
             stringsAsFactors=FALSE)
         colnames(.Object@.data) <- strsplit(tolower(
             gsub("\\s", ".",
