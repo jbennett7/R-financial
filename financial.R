@@ -1,3 +1,8 @@
+library(stringr)
+
+# From Schwab accounts, CSV files contain additional data that makes it difficult to convert directly to a data frame.
+
+# Read in the initial file as a character vector.
 read.data <- function(filepath){
     conn <- file(filepath, 'r')
     data <- readLines(conn)
@@ -15,6 +20,39 @@ read.data <- function(filepath){
     }
     return(data)
 }
+
+# Transform columnames to make them easier to work with.
+clean.colnames <- function(string){
+    # Replace whitespaces with "."
+    string <- gsub("\\s", ".", string)
+    # All lower case characters
+    string <- tolower(string)
+    # Replace '/' with '-'
+    string <- gsub("[/]", "-", string)
+    # Replace '$' with 'dol'
+    string <- gsub("[$]", "dol", string)
+    # Replace '%' with 'pct'
+    string <- gsub("[%]", "pct", string)
+    # Eliminate "?"
+    string <- gsub("[?]", "", string)
+    return(string)
+}
+
+# Create the data frame.
+create.df <- function(data){
+    c <- min(which(str_count(data, ",") > 5))
+    columns <- strsplit(clean.colnames(data[c]), ",", fixed=TRUE)[[1]]
+    df <- data.frame(matrix(ncol=length(columns), nrow=0))
+    colnames(df) <- columns
+    for(i in 1:length(data[c+1:length(data)])){
+        d <- strsplit(data[c+i], ",", fixed=TRUE)[[1]]
+        if(length(d) == length(columns)){
+            df[nrow(df)+1,] <- d
+        }
+    }
+    return(df)
+}
+
 
 setClass("Data")
 setClass("StockData",
@@ -77,24 +115,8 @@ setClass("PositionsTable",
 setMethod("initialize","PositionsTable",
     function(.Object, filepath){
         data <- read.data(filepath)
-        csv_start <- 0
-        for(i in 1:length(data)){
-            if(lengths(regmatches(data[i],gregexpr(',',data[i]))) > 5){
-                csv_start <- i
-                break
-            }
-        }
         .Object@.headline <- data[1]
-        .Object@.data <- data.frame(
-            do.call(rbind, strsplit(data[csv_start:(length(data)-2)], ',', fixed=TRUE)),
-            stringsAsFactors=FALSE)
-        colnames(.Object@.data) <- strsplit(tolower(
-            gsub("\\s", ".",
-                gsub("[/]", "-",
-                    gsub("[%]", "pct",
-                        gsub("[$]", "dol", data[3]))))),
-            ",",
-            fixed=TRUE)[[1]]
+        .Object@.data <- create.df(data)
         for(item in colnames(.Object@.data)){
             .Object@.data[,c(item)] <- gsub("[+$%]", "",
                 gsub("N/A", NA, .Object@.data[,c(item)]))
