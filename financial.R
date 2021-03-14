@@ -1,20 +1,22 @@
+#TODO: Decouple the ETL process. Right now ETL is performed in the create.X.df functions.
 library(stringr)
 
 f.filter <- c(
     "symbol",
-    "description",
     "quantity",
-    "cost.basis"
+    "cost.basis",
+    "type"
 )
 
 s.filter <- c(
     "symbol",
-    "description",
     "quantity",
-    "cost.basis"
+    "cost.basis",
+    "security.type"
 )
 
 # Read in the initial file as a character vector.
+# Extract
 read.data <- function(filepath){
     conn <- file(filepath, 'r')
     data <- readLines(conn)
@@ -47,11 +49,15 @@ create.s.df <- function(filepath){
         d <- strsplit(d, ",", fixed=TRUE)[[1]]
         d <- gsub("(N/A|--)", NA, d)
         tryCatch(d <- as.double(d), warning = function(e) e)
+        d <- gsub("Equity", "E", d)
+        d <- gsub("ETFs & Closed End Funds", "F", d)
+        d <- gsub("Cash and Money Market", "C", d)
         if(length(d) == length(columns) && tolower(d[1]) != columns[1]){
             df[nrow(df)+1,] <- d
         }
     }
-    return(df[,s.filter])
+    df <- df[, s.filter]
+    return(df)
 }
 
 create.f.df <- function(filepath){
@@ -81,8 +87,12 @@ create.f.df <- function(filepath){
             df[nrow(df)+1,] <- d
         }
     }
-    return(df[,f.filter])
+    df <- df[, f.filter]
+    return(df)
 }
+
+
+
 
 setClass("Data")
 setClass("StockData",

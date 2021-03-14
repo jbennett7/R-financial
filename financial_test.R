@@ -10,7 +10,7 @@ test.read.f.data <- function(){
     input <- './input.csv'
     create.f.df(input)
 }
-#test.read.f.data()
+test.read.f.data()
 
 test.positionTable.initialize <- function(){
     input <- './input_all.csv'
