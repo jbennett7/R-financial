@@ -1,5 +1,19 @@
 library(stringr)
 
+f.filter <- c(
+    "symbol",
+    "description",
+    "quantity",
+    "cost.basis"
+)
+
+s.filter <- c(
+    "symbol",
+    "description",
+    "quantity",
+    "cost.basis"
+)
+
 # Read in the initial file as a character vector.
 read.data <- function(filepath){
     conn <- file(filepath, 'r')
@@ -10,41 +24,39 @@ read.data <- function(filepath){
 
 # Transform columnames to make them easier to work with.
 clean.colnames <- function(string){
-    # Replace whitespaces with "."
     string <- gsub("\\s", ".", string)
-    # All lower case characters
     string <- tolower(string)
-    # Replace '/' with '-'
     string <- gsub("[/]", "-", string)
-    # Replace '$' with 'dol'
     string <- gsub("[$]", "dol", string)
-    # Replace '%' with 'pct'
     string <- gsub("[%]", "pct", string)
-    # Eliminate "?"
     string <- gsub("[?]", "", string)
-    # Eliminate '\"'
     string <- gsub('\\\"', '', string)
     return(string)
 }
 
 create.s.df <- function(filepath){
     data <- read.data(filepath)
+    # Assuming that the header field starts the data and has more than 5 commas.
     c <- min(which(str_count(data, ",") > 5))
     columns <- strsplit(clean.colnames(data[c]), ",", fixed=TRUE)[[1]]
     df <- data.frame(matrix(ncol=length(columns), nrow=0))
     colnames(df) <- columns
     for(i in c+1:length(data)){
         d <- gsub('\\|',',',gsub(',','',gsub('\\\"','',gsub('\\\",\\\"','|',data[i]))))
+        d <- str_replace_all(d,"[$%+]", "")
         d <- strsplit(d, ",", fixed=TRUE)[[1]]
+        d <- gsub("(N/A|--)", NA, d)
+        tryCatch(d <- as.double(d), warning = function(e) e)
         if(length(d) == length(columns) && tolower(d[1]) != columns[1]){
             df[nrow(df)+1,] <- d
         }
     }
-     return(df)
+    return(df[,s.filter])
 }
 
 create.f.df <- function(filepath){
     data <- read.data(filepath)
+    # Assuming that the header field starts the data and has more than 5 commas.
     c <- min(which(str_count(data, ",") > 5))
     columns <- strsplit(clean.colnames(data[c]), ",", fixed=TRUE)[[1]]
     df <- data.frame(matrix(ncol=length(columns), nrow=0))
@@ -63,11 +75,13 @@ create.f.df <- function(filepath){
             }
         }
         d <- strsplit(d, ",", fixed=TRUE)[[1]]
+        d <- gsub("n/a", NA, d)
+        tryCatch(d <- as.double(d), warning = function(e) e)
         if(length(d) == length(columns)){
             df[nrow(df)+1,] <- d
         }
     }
-    return(df)
+    return(df[,f.filter])
 }
 
 setClass("Data")
