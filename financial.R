@@ -5,17 +5,6 @@ read.data <- function(filepath){
     conn <- file(filepath, 'r')
     data <- readLines(conn)
     close(conn)
-    for (i in 1:length(data)){
-        # To distinguish between misc lines (not column names) and data use the number of commas as an indicator.
-        if (lengths(regmatches(data[i],gregexpr(',',data[i]))) > 5){
-            # This is a column header or its data.
-            ## This uses multiple substitutions in order to eliminate commas inside values.
-            data[i] <- gsub('\\|',',',gsub(',','',gsub('\\\"','',gsub('\\\",\\\"','|',data[i]))))
-        } else {
-            # This is just miscellaneous text.
-            data[i] <- gsub('\\\"','',data[i])
-        }
-    }
     return(data)
 }
 
@@ -33,24 +22,53 @@ clean.colnames <- function(string){
     string <- gsub("[%]", "pct", string)
     # Eliminate "?"
     string <- gsub("[?]", "", string)
+    # Eliminate '\"'
+    string <- gsub('\\\"', '', string)
     return(string)
 }
 
-# Create the data frame.
-create.df <- function(data){
+create.s.df <- function(filepath){
+    data <- read.data(filepath)
     c <- min(which(str_count(data, ",") > 5))
     columns <- strsplit(clean.colnames(data[c]), ",", fixed=TRUE)[[1]]
     df <- data.frame(matrix(ncol=length(columns), nrow=0))
     colnames(df) <- columns
-    for(i in 1:length(data[c+1:length(data)])){
-        d <- strsplit(data[c+i], ",", fixed=TRUE)[[1]]
+    for(i in c+1:length(data)){
+        d <- gsub('\\|',',',gsub(',','',gsub('\\\"','',gsub('\\\",\\\"','|',data[i]))))
+        d <- strsplit(d, ",", fixed=TRUE)[[1]]
+        if(length(d) == length(columns) && tolower(d[1]) != columns[1]){
+            df[nrow(df)+1,] <- d
+        }
+    }
+     return(df)
+}
+
+create.f.df <- function(filepath){
+    data <- read.data(filepath)
+    c <- min(which(str_count(data, ",") > 5))
+    columns <- strsplit(clean.colnames(data[c]), ",", fixed=TRUE)[[1]]
+    df <- data.frame(matrix(ncol=length(columns), nrow=0))
+    colnames(df) <- columns
+    for(i in c+1:length(data)){
+        ncomma <- str_count(data[i], ",")
+        if (is.na(ncomma) || ncomma < length(columns)){
+            next
+        }
+        d <- str_replace_all(data[i],"[$%+]", "")
+        ri <- unlist(str_extract_all(d,"\\\"[0-9,.]+\\\""))
+        if(!identical(ri, character(0))){
+            rr <- unlist(str_replace_all(ri, "[\\\",]", ""))
+            for(i in 1:length(ri)){
+                d <- unlist(str_replace_all(d,ri[i],rr[i]))
+            }
+        }
+        d <- strsplit(d, ",", fixed=TRUE)[[1]]
         if(length(d) == length(columns)){
             df[nrow(df)+1,] <- d
         }
     }
     return(df)
 }
-
 
 setClass("Data")
 setClass("StockData",
@@ -105,15 +123,13 @@ setMethod("print","StockData",
 setClass("Table")
 setClass("PositionsTable",
     representation(
-        .headline = "character",
         .data = "data.frame"
     ),
     contains = "Table"
 )
 setMethod("initialize","PositionsTable",
     function(.Object, filepath){
-        data <- read.data(filepath)
-        .Object@.headline <- data[1]
+        data <- read.s.data(filepath)
         .Object@.data <- create.df(data)
         for(item in colnames(.Object@.data)){
             .Object@.data[,c(item)] <- gsub("[+$%]", "",

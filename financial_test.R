@@ -1,16 +1,21 @@
 source('financial.R')
 
-test.read.data <- function() {
-    input <- './input.csv'
-    raw_data <- read.data(input)
-    create.df(raw_data)
+test.read.s.data <- function(){
+    input <- './input_all.csv'
+    create.s.df(input)[1:3,]
 }
-#test.read.data()
+#test.read.s.data()
 
-test.positionTable.initialize <- function() {
+test.read.f.data <- function(){
     input <- './input.csv'
+    create.f.df(input)
+}
+test.read.f.data()
+
+test.positionTable.initialize <- function(){
+    input <- './input_all.csv'
     PT <- new("PositionsTable", input)
-    print(PT@.data$pct.of.account)
+    d <- PT@.data[order(PT@.data$symbol),c("symbol", "quantity", "price", "pct.of.account","security.type")]
+    d
 }
 #test.positionTable.initialize()
-
